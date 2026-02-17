@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AeroBalance</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-image: url('fa.jpeg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.9);
+            width: 100%;
+            max-width: 500px;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+            color: #333;
+        }
+        select, input {
+            width: 100%;
+            padding: 12px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-top: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #2ecc71;
+        }
+        #result-box {
+            margin-top: 25px;
+            padding: 20px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+            text-align: center;
+            display: none;
+        }
+        #result-box h3 {
+            margin: 0 0 10px 0;
+            color: #27ae60;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>AeroBalance</h1>
+    
+    <label>Indulás</label>
+    <select id="from"></select>
+
+    <label>Érkezés</label>
+    <select id="to"></select>
+
+    <label>Távolság (km)</label>
+    <input type="text" id="dist" readonly>
+
+    <label>Utasok</label>
+    <input type="number" id="pax" value="1" min="1">
+
+    <label>Osztály</label>
+    <select id="cls">
+        <option value="1">Economy</option>
+        <option value="2">Business/First</option>
+    </select>
+
+    <button onclick="calc()">Kalkuláció</button>
+
+    <div id="result-box">
+        <h3><span id="co2">0</span> tonna CO2</h3>
+        <span>Kompenzáció: <span id="trees">0</span> db fa</span>
+    </div>
+</div>
+
+<script>
+    const cities = {
+        "Amszterdam": { lat: 52.3086, lon: 4.7639 },
+        "Budapest": { lat: 47.4369, lon: 19.2556 },
+        "London": { lat: 51.4700, lon: -0.4543 },
+        "New York": { lat: 40.6398, lon: -73.7789 },
+        "Párizs": { lat: 49.0097, lon: 2.5479 },
+        "Tokió": { lat: 35.5523, lon: 139.7797 },
+        "Bécs": { lat: 48.1103, lon: 16.5697 },
+        "Frankfurt": { lat: 50.0333, lon: 8.5706 },
+        "Dubaj": { lat: 25.2528, lon: 55.3644 }
+    };
+
+    const s1 = document.getElementById('from');
+    const s2 = document.getElementById('to');
+
+    Object.keys(cities).sort().forEach(c => {
+        s1.add(new Option(c, c));
+        s2.add(new Option(c, c));
+    });
+
+    function getD(lat1, lon1, lat2, lon2) {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * (Math.PI/180);
+        const dLon = (lon2 - lon1) * (Math.PI/180);
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * (Math.PI/180)) * Math.cos(lat2 * (Math.PI/180)) * Math.sin(dLon/2) * Math.sin(dLon/2);
+        return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+    }
+
+    [s1, s2].forEach(el => el.addEventListener('change', () => {
+        const c1 = cities[s1.value];
+        const c2 = cities[s2.value];
+        if (c1 && c2) document.getElementById('dist').value = Math.round(getD(c1.lat, c1.lon, c2.lat, c2.lon));
+    }));
+
+    function calc() {
+        const km = document.getElementById('dist').value;
+        if(!km) return;
+        const p = document.getElementById('pax').value;
+        const f = document.getElementById('cls').value;
+        
+        const res = (km * p * (0.15 * f)) / 1000;
+        
+        document.getElementById('co2').innerText = res.toFixed(2);
+        document.getElementById('trees').innerText = Math.ceil(res);
+        document.getElementById('result-box').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
