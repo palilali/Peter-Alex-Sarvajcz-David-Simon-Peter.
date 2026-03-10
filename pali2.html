@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AeroBalance</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-green: #00b894;
+            --dark-green: #00896f;
+            --text-color: #2d3436;
+            --text-muted: #535e62;
+            --border-color: rgba(255, 255, 255, 0.4);
+            --card-bg: rgba(255, 255, 255, 0.65);
+            --input-bg: rgba(255, 255, 255, 0.8);
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.5);
+            --glow-color: rgba(0, 184, 148, 0.4);
+            --bg-sky-1: #9cbcd1; 
+            --bg-sky-2: #7b9eb3;
+            --cloud-color: rgba(255, 255, 255, 0.95);
+            --plane-color: rgba(71, 85, 105, 0.5);
+        }
+
+        [data-theme="dark"] {
+            --primary-green: #00cec9;
+            --dark-green: #00b894;
+            --text-color: #dfe6e9;
+            --text-muted: #b2bec3;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --card-bg: rgba(30, 39, 46, 0.75);
+            --input-bg: rgba(45, 52, 54, 0.8);
+            --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+            --glow-color: rgba(0, 206, 201, 0.4);
+            --bg-sky-1: #0f172a;
+            --bg-sky-2: #1e293b;
+            --cloud-color: rgba(255, 255, 255, 0.05);
+            --plane-color: rgba(255, 255, 255, 0.9);
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        @keyframes slowFloat {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(40px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 0 0 var(--glow-color); }
+            70% { box-shadow: 0 0 0 15px rgba(0,0,0,0); }
+            100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); }
+        }
+
+        @keyframes flyPlane {
+            0% { transform: translate(-20vw, 50vh) rotate(80deg) scale(0.8); }
+            100% { transform: translate(120vw, 20vh) rotate(80deg) scale(0.8); }
+        }
+
+        @keyframes driftClouds1 {
+            0% { background-position: 0 0; }
+            100% { background-position: 200vw 0; }
+        }
+
+        @keyframes driftClouds2 {
+            0% { background-position: 0 0; }
+            100% { background-position: -200vw 0; }
+        }
+
+        @keyframes occasionalFlash {
+            0%, 85%, 100% { opacity: 0; transform: scale(0.8); }
+            92% { opacity: 0.8; transform: scale(1.2); }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", Roboto, sans-serif;
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            transition: all 0.5s ease;
+            overflow-x: hidden;
+        }
+
+        .scenery {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+            background: linear-gradient(135deg, var(--bg-sky-1) 0%, var(--bg-sky-2) 100%);
+            transition: background 0.5s ease;
+        }
+
+        .clouds-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+        }
+
+        .c1 {
+            background-image: radial-gradient(closest-side, var(--cloud-color) 0%, transparent 80%),
+                              radial-gradient(closest-side, var(--cloud-color) 0%, transparent 80%);
+            background-size: 120vw 80vh, 150vw 90vh;
+            background-position: -20vw 10vh, 80vw 50vh;
+            opacity: 0.85;
+            filter: blur(20px);
+            animation: driftClouds1 120s linear infinite;
+        }
+
+        .c2 {
+            background-image: radial-gradient(closest-side, var(--cloud-color) 0%, transparent 80%),
+                              radial-gradient(closest-side, var(--cloud-color) 0%, transparent 80%);
+            background-size: 100vw 70vh, 130vw 100vh;
+            background-position: 50vw -20vh, -10vw 80vh;
+            opacity: 0.65;
+            filter: blur(25px);
+            animation: driftClouds2 160s linear infinite;
+        }
+
+        [data-theme="dark"] .c1, [data-theme="dark"] .c2 { opacity: 0.08; }
+
+        .stars-base {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                radial-gradient(1.5px 1.5px at 20px 30px, #ffffff, transparent),
+                radial-gradient(1.5px 1.5px at 80px 120px, #ffffff, transparent),
+                radial-gradient(1.5px 1.5px at 150px 60px, #ffffff, transparent),
+                radial-gradient(1.5px 1.5px at 220px 190px, #ffffff, transparent);
+            background-repeat: repeat;
+            background-size: 250px 250px;
+            opacity: 0;
+            transition: opacity 1s ease;
+            z-index: -2;
+        }
+
+        [data-theme="dark"] .stars-base {
+            opacity: 0.4;
+        }
+
+        .stars-twinkle {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                radial-gradient(2px 2px at 50px 80px, #ffffff, transparent),
+                radial-gradient(2px 2px at 180px 30px, #ffffff, transparent),
+                radial-gradient(2.5px 2.5px at 240px 220px, #ffffff, transparent);
+            background-repeat: repeat;
+            background-size: 350px 350px;
+            opacity: 0;
+            transition: opacity 1s ease;
+            z-index: -2;
+        }
+
+        [data-theme="dark"] .stars-twinkle {
+            animation: occasionalFlash 7s infinite ease-in-out 1s;
+        }
+
+        .plane-bg {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            fill: var(--plane-color);
+            transition: fill 0.5s ease;
+            animation: flyPlane 70s linear infinite; 
+        }
+
+        .logo {
+            display: block;
+            margin: 0 auto 15px auto;
+            height: 60px;
+            width: auto;
+            transition: filter 0.3s ease, transform 0.4s ease;
+            animation: float 4s ease-in-out infinite;
+            filter: drop-shadow(0 4px 6px rgba(0, 184, 148, 0.4));
+        }
+
+        .logo:hover { transform: scale(1.1) rotate(3deg); }
+
+        [data-theme="dark"] .logo {
+            filter: invert(1) brightness(2) drop-shadow(0 4px 6px rgba(0, 206, 201, 0.6));
+        }
+
+        .theme-switch-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+        }
+        
+        .theme-btn {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: var(--glass-border);
+            color: var(--text-color);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            border-radius: 50%;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 45px;
+            height: 45px;
+        }
+
+        .theme-btn:hover { transform: scale(1.15); box-shadow: 0 10px 20px var(--glow-color); }
+
+        .lang-switch-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px; 
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            padding: 10px 20px;
+            border-radius: 30px;
+            box-shadow: var(--shadow);
+            z-index: 1000;
+            border: var(--glass-border);
+            transition: all 0.3s ease;
+        }
+
+        .lang-switch-container:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0,0,0,0.2);
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            border-radius: 50%;
+        }
+
+        input:checked + .slider { background-color: var(--primary-green); }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        .lang-text { 
+            font-size: 1rem; 
+            font-weight: 700;
+            cursor: pointer; 
+            color: var(--text-muted); 
+            transition: all 0.3s ease;
+        }
+        
+        .lang-text.active { color: var(--primary-green); transform: scale(1.1); text-shadow: 0 0 10px var(--glow-color); }
+
+        .main-wrapper {
+            flex: 1;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 80px; 
+        }
+
+        .container {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px) saturate(200%);
+            -webkit-backdrop-filter: blur(20px) saturate(200%);
+            width: 100%;
+            max-width: 950px;
+            border-radius: 24px;
+            box-shadow: var(--shadow), 0 0 20px rgba(255,255,255,0.1) inset;
+            overflow: hidden;
+            border: var(--glass-border);
+            transition: all 0.4s ease;
+            animation: slideUpFade 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+        }
+        
+        .container::before {
+            content: ""; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.2), transparent);
+            transform: skewX(-20deg); animation: shine 6s infinite; pointer-events: none;
+        }
+        
+        @keyframes shine {
+            0% { left: -100%; }
+            20% { left: 200%; }
+            100% { left: 200%; }
+        }
+
+        .header {
+            text-align: center;
+            padding: 40px 20px 25px;
+            background: transparent;
+            border-bottom: var(--glass-border);
+            position: relative;
+        }
+
+        .header h1 {
+            font-weight: 900;
+            margin: 0;
+            font-size: 3rem;
+            color: var(--text-color);
+            letter-spacing: -1.5px;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+        }
+        
+        .header h1:hover { transform: scale(1.02); }
+
+        .header span { 
+            background: linear-gradient(135deg, var(--primary-green), #0984e3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .header p { color: var(--text-muted); margin-top: 12px; font-size: 1.1rem; font-weight: 600; }
+
+        .calculator-form { padding: 45px; }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .full-width { grid-column: span 2; }
+
+        label {
+            display: block;
+            margin-bottom: 12px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            font-weight: 800;
+        }
+
+        select, input {
+            font-family: inherit;
+            width: 100%;
+            padding: 18px 22px;
+            border: var(--glass-border);
+            border-radius: 14px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-color);
+            background-color: var(--input-bg);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.02);
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+            appearance: none; -webkit-appearance: none;
+        }
+        
+        select {
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 1.2rem center;
+            background-size: 1.4em;
+        }
+
+        input[readonly] { 
+            background-color: rgba(0,0,0,0.03);
+            color: var(--text-muted); 
+            font-weight: 700;
+            cursor: not-allowed;
+        }
+        
+        select:focus, input:focus { 
+            outline: none; 
+            border-color: var(--primary-green); 
+            box-shadow: 0 0 0 4px var(--glow-color), inset 0 2px 5px rgba(0,0,0,0.02);
+            transform: translateY(-3px);
+            background-color: var(--card-bg);
+        }
+
+        .flight-details-box {
+            background-color: rgba(0, 184, 148, 0.03);
+            padding: 35px;
+            border-radius: 20px;
+            border: var(--glass-border);
+            margin-bottom: 40px;
+            transition: all 0.4s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.02) inset;
+        }
+        
+        .flight-details-box:hover { transform: translateY(-5px); box-shadow: var(--shadow); background-color: rgba(0, 184, 148, 0.06); }
+
+        .flight-details-box h4 { font-weight: 900; margin-top: 0; color: var(--primary-green); margin-bottom: 25px; font-size: 1.4rem; letter-spacing: 0.5px; }
+
+        .pax-selector-container {
+            background: var(--input-bg);
+            border: var(--glass-border);
+            border-radius: 14px;
+            padding: 10px 25px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.02);
+        }
+
+        .pax-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 0;
+            border-bottom: var(--glass-border);
+        }
+
+        .pax-row:last-child { border-bottom: none; }
+
+        .pax-label span { display: block; font-weight: 800; color: var(--text-color); font-size: 1.05rem;}
+        .pax-sublabel { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; margin-top: 5px;}
+
+        .pax-controls { display: flex; align-items: center; gap: 18px; }
+
+        .pax-btn {
+            font-family: inherit;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            border: none;
+            background-color: rgba(0,0,0,0.05);
+            color: var(--text-color);
+            font-size: 1.4rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        [data-theme="dark"] .pax-btn { background-color: rgba(255,255,255,0.1); }
+
+        .pax-btn:hover { background-color: var(--primary-green); color: white; transform: scale(1.15); box-shadow: 0 5px 15px var(--glow-color); }
+        
+        .pax-count { font-weight: 900; font-size: 1.3rem; min-width: 28px; text-align: center; }
+
+        .btn-calc {
+            font-family: inherit;
+            background: linear-gradient(135deg, var(--primary-green), #0984e3);
+            color: white;
+            border: none;
+            padding: 22px;
+            font-size: 1.4rem;
+            font-weight: 900;
+            border-radius: 16px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            box-shadow: 0 10px 25px var(--glow-color);
+            position: relative;
+            overflow: hidden;
+            animation: pulseGlow 3s infinite;
+        }
+
+        .btn-calc::after {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: rgba(255,255,255,0.25); transform: rotate(45deg); transition: all 0.3s ease; opacity: 0;
+        }
+
+        .btn-calc:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 20px 35px rgba(0, 184, 148, 0.5); letter-spacing: 3.5px; }
+        .btn-calc:hover::after { opacity: 1; left: 100%; transition: all 0.8s ease; }
+
+        .results-section {
+            display: none;
+            padding: 0 45px 45px 45px;
+            animation: slideUpFade 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .impact-card {
+            background: linear-gradient(135deg, var(--primary-green) 0%, #0984e3 100%);
+            color: white;
+            border-radius: 20px;
+            padding: 45px;
+            margin-bottom: 45px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 184, 148, 0.35);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.4s ease;
+        }
+        
+        .impact-card:hover { transform: translateY(-5px); }
+        
+        .impact-card::before {
+            content: '🍃'; position: absolute; font-size: 180px; opacity: 0.08; top: -40px; right: -30px; 
+            transform: rotate(15deg); animation: float 6s ease-in-out infinite;
+        }
+
+        .impact-card h3 { font-weight: 900; font-size: 3.5rem; margin: 15px 0; letter-spacing: -1.5px; text-shadow: 0 4px 15px rgba(0,0,0,0.25); }
+        .impact-card p { font-size: 1.3rem; opacity: 0.95; margin: 0; font-weight: 800; letter-spacing: 1.5px;}
+
+        .tree-badge {
+            background: rgba(0,0,0,0.2); backdrop-filter: blur(5px); padding: 15px 30px; 
+            border-radius: 30px; display: inline-block; margin-top: 15px; 
+            border: 1px solid rgba(255,255,255,0.3); font-size: 1.2rem; font-weight: 800;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            animation: slowFloat 4s ease-in-out infinite;
+        }
+
+        .visuals-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+
+        .visual-item {
+            text-align: center;
+            padding: 35px 20px;
+            background: var(--input-bg);
+            border: var(--glass-border);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            opacity: 0;
+            transform: translateY(30px) scale(0.9);
+        }
+
+        .visual-item.show { opacity: 1; transform: translateY(0) scale(1); }
+        .visual-item:hover { transform: translateY(-10px) scale(1.05); box-shadow: 0 15px 35px rgba(0,0,0,0.15); border-color: var(--primary-green); }
+
+        .visual-icon { font-size: 3.5rem; margin-bottom: 20px; display: block; animation: float 3s ease-in-out infinite; }
+        .visual-item:nth-child(2) .visual-icon { animation-delay: 0.2s; }
+        .visual-item:nth-child(3) .visual-icon { animation-delay: 0.4s; }
+        
+        .visual-value { display: block; font-size: 2rem; font-weight: 900; color: var(--text-color); }
+        .visual-label { color: var(--text-muted); font-size: 1rem; margin-top: 10px; display: block; font-weight: 800; text-transform: uppercase;}
+
+        .site-footer {
+            width: 100%;
+            padding: 35px 20px;
+            margin-top: auto;
+            text-align: center;
+            font-size: 0.95rem;
+            color: var(--text-color);
+            font-weight: 600;
+        }
+        
+        .footer-links a {
+            color: inherit; text-decoration: none; opacity: 0.7; transition: all 0.3s ease; position: relative; font-weight: 700;
+        }
+        
+        .footer-links a::after {
+            content: ''; position: absolute; width: 100%; transform: scaleX(0); height: 2px; 
+            bottom: -5px; left: 0; background-color: var(--primary-green); transform-origin: bottom right; transition: transform 0.3s ease-out;
+        }
+        
+        .footer-links a:hover { opacity: 1; color: var(--primary-green); }
+        .footer-links a:hover::after { transform: scaleX(1); transform-origin: bottom left; }
+
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); z-index: 1002;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .modal {
+            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9);
+            background: var(--card-bg); backdrop-filter: blur(25px) saturate(200%); padding: 45px; border-radius: 24px; z-index: 1003;
+            border: 1px solid rgba(255,255,255,0.4); width: 90%; max-width: 600px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.4), 0 0 40px rgba(0, 184, 148, 0.1) inset; color: var(--text-color); text-align: left;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        
+        @keyframes popIn { 
+            from { opacity: 0; transform: translate(-50%, -40%) scale(0.9); } 
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); } 
+        }
+
+        .modal h2 { font-weight: 900; margin-top: 0; color: var(--primary-green); font-size: 2rem; letter-spacing: -0.5px; }
+        .modal p, .modal div { line-height: 1.8; font-size: 1.1rem; color: var(--text-muted); font-weight: 600;}
+
+        .close-btn {
+            position: absolute; top: 20px; right: 25px; font-size: 2.5rem; font-weight: 400;
+            cursor: pointer; color: var(--text-muted); transition: all 0.3s ease; line-height: 1;
+        }
+        .close-btn:hover { color: #e74c3c; transform: rotate(90deg); }
+
+        @media (max-width: 768px) {
+            .form-grid, .visuals-grid { grid-template-columns: 1fr; }
+            .full-width { grid-column: span 1; }
+            .header h1 { font-size: 2.4rem; }
+            .impact-card h3 { font-size: 2.5rem; }
+        }
+    </style>
+</head>
+<body data-theme="light">
+
+<div class="scenery">
+    <div class="clouds-layer c1"></div>
+    <div class="clouds-layer c2"></div>
+    <div class="stars-base"></div>
+    <div class="stars-twinkle"></div>
+    <svg class="plane-bg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
+    </svg>
+</div>
+
+<div class="theme-switch-container">
+    <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">🌙</button>
+</div>
+
+<div class="lang-switch-container">
+    <span id="lang-en" class="lang-text" onclick="setLang('en')">ENG</span>
+    <label class="switch">
+        <input type="checkbox" id="langToggle" onchange="toggleLanguage()">
+        <span class="slider round"></span>
+    </label>
+    <span id="lang-hu" class="lang-text active" onclick="setLang('hu')">HU</span>
+</div>
+
+<div class="main-wrapper">
+    <div class="container">
+        <div class="header">
+            <img src="logo.png" alt="AeroBalance Logo" class="logo" onerror="this.style.display='none'">
+            <h1>Aero<span>Balance</span></h1>
+            <p id="lblSubTitle">Prémium Karbonlábnyom & Kompenzáció Kalkulátor</p>
+        </div>
+
+        <div class="calculator-form">
+            <div class="form-grid">
+                <div>
+                    <label id="lblFrom">Indulás (Honnan)</label>
+                    <select id="fromCity" onchange="updateDistance()">
+                        <option value="" disabled selected id="optSelect">Válassz várost...</option>
+                    </select>
+                </div>
+                <div>
+                    <label id="lblTo">Érkezés (Hova)</label>
+                    <select id="toCity" onchange="updateDistance()">
+                        <option value="" disabled selected id="optSelect2">Válassz várost...</option>
+                    </select>
+                </div>
+                
+                <div class="full-width">
+                    <label id="lblDistance">Számolt Távolság (Légvonalban)</label>
+                    <input type="text" id="distance" placeholder="..." readonly>
+                </div>
+            </div>
+
+            <div class="flight-details-box">
+                <h4 id="lblDetailsHeader">Utazás Részletei</h4>
+                <div class="form-grid" style="margin-bottom: 0;">
+                    <div>
+                        <label id="lblPassengers">Utasok</label>
+                        <div class="pax-selector-container">
+                            <div class="pax-row">
+                                <div class="pax-label">
+                                    <span id="lblAdults">Felnőtt</span>
+                                    <span class="pax-sublabel">(12+)</span>
+                                </div>
+                                <div class="pax-controls">
+                                    <button class="pax-btn" onclick="modPax('adult', -1)">-</button>
+                                    <span id="count-adult" class="pax-count">1</span>
+                                    <button class="pax-btn" onclick="modPax('adult', 1)">+</button>
+                                </div>
+                            </div>
+                            <div class="pax-row">
+                                <div class="pax-label">
+                                    <span id="lblChildren">Gyerek</span>
+                                    <span class="pax-sublabel">(2-11)</span>
+                                </div>
+                                <div class="pax-controls">
+                                    <button class="pax-btn" onclick="modPax('child', -1)">-</button>
+                                    <span id="count-child" class="pax-count">0</span>
+                                    <button class="pax-btn" onclick="modPax('child', 1)">+</button>
+                                </div>
+                            </div>
+                            <div class="pax-row">
+                                <div class="pax-label">
+                                    <span id="lblInfants">Csecsemő</span>
+                                    <span class="pax-sublabel">(0-1)</span>
+                                </div>
+                                <div class="pax-controls">
+                                    <button class="pax-btn" onclick="modPax('infant', -1)">-</button>
+                                    <span id="count-infant" class="pax-count">0</span>
+                                    <button class="pax-btn" onclick="modPax('infant', 1)">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div style="margin-bottom: 30px;">
+                            <label id="lblClass">Repülési Osztály</label>
+                            <select id="flightClass">
+                                <option value="1" id="optEco">Turista (Economy) - 1x</option>
+                                <option value="3" id="optBiz">Üzleti (Business) - 3x</option>
+                                <option value="4" id="optFirst">Első Osztály (First) - 4x</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label id="lblType">Típus</label>
+                            <select id="tripType">
+                                <option value="1" id="optOneWay">Egyirányú</option>
+                                <option value="2" id="optReturn">Oda-vissza</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-calc" onclick="calculateFootprint()" id="btnCalc">Kalkuláció Indítása</button>
+        </div>
+
+        <div id="results" class="results-section">
+            <div class="impact-card">
+                <p id="lblResultTitle">AZ UTAZÁSOD BECSÜLT HATÁSA</p>
+                <h3 id="totalCO2Display">0.00 tonna CO2</h3>
+                <div class="tree-badge">
+                    <strong id="treeDisplay">Szükséges kompenzáció: 0 db fa</strong>
+                </div>
+            </div>
+
+            <h4 style="text-align: center; color: var(--text-color); margin-bottom: 35px; font-size: 1.3rem; font-weight: 800; letter-spacing: 0.5px;" id="lblEquals">Ez a mennyiség egyenlő:</h4>
+
+            <div class="visuals-grid">
+                <div class="visual-item" id="vis1">
+                    <span class="visual-icon">🧺</span>
+                    <span id="laundryVal" class="visual-value">0</span>
+                    <span class="visual-label" id="lblLaundry">mosás</span>
+                </div>
+                <div class="visual-item" id="vis2">
+                    <span class="visual-icon">🚿</span>
+                    <span id="showerVal" class="visual-value">0</span>
+                    <span class="visual-label" id="lblShower">perc zuhanyzás</span>
+                </div>
+                <div class="visual-item" id="vis3">
+                    <span class="visual-icon">📺</span>
+                    <span id="tvVal" class="visual-value">0</span>
+                    <span class="visual-label" id="lblTv">óra TV nézés</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer class="site-footer">
+    <p><strong>© 2026 AeroBalance Kft.</strong> | <span id="footerText">Budapest Magyarország</span></p>
+    <p class="footer-links" style="margin-top: 15px; font-size: 1.05rem;">
+        <a href="javascript:void(0)" onclick="openModal('modal-goal')" id="linkGoal">Cél</a>
+        <span style="opacity: 0.3; margin: 0 15px;">|</span>
+        <a href="javascript:void(0)" onclick="openModal('modal-privacy')" id="linkPrivacy">Adatvédelem</a> 
+        <span style="opacity: 0.3; margin: 0 15px;">|</span> 
+        <a href="javascript:void(0)" onclick="openModal('modal-multipliers')" id="linkMultipliers">Szorzók</a> 
+        <span style="opacity: 0.3; margin: 0 15px;">|</span> 
+        <a href="javascript:void(0)" onclick="openModal('modal-terms')" id="linkTerms">Feltételek</a>
+        <span style="opacity: 0.3; margin: 0 15px;">|</span> 
+        <a href="javascript:void(0)" onclick="openModal('modal-guide')" id="linkGuide">Útmutató</a>
+    </p>
+</footer>
+
+<div id="modal-overlay" class="modal-overlay" onclick="closeModals()"></div>
+
+<div id="modal-goal" class="modal">
+    <span class="close-btn" onclick="closeModals()">&times;</span>
+    <h2 id="modalGoalTitle">Célunk</h2>
+    <p id="modalGoalText">Elsődleges célunk, hogy utazás előtt ösztönözzük a tudatosabb repülést. Szeretnénk rávilágítani az egyéni felelősségre, és lehetőséget adni arra, hogy pontosabban megértsük és kompenzáljuk a környezeti terhelésünket, mielőtt egyáltalán felszállnánk.</p>
+</div>
+
+<div id="modal-privacy" class="modal">
+    <span class="close-btn" onclick="closeModals()">&times;</span>
+    <h2 id="modalPrivacyTitle">Adatvédelmi Irányelvek</h2>
+    <p id="modalPrivacyText">Az AeroBalance nem tárol személyes adatokat vagy repülési útvonalakat. Minden kalkuláció helyileg a böngésződben történik. Külső szerverekre adatot nem továbbítunk.</p>
+</div>
+
+<div id="modal-multipliers" class="modal">
+    <span class="close-btn" onclick="closeModals()">&times;</span>
+    <h2 id="modalMultiTitle">Kibocsátási Szorzók</h2>
+    <p id="modalMultiText">A repülési osztályok szorzói a fizikai helyfoglaláson és a többletsúlyon alapulnak. A turistaosztály képezi az alapot. A business osztály mintegy háromszoros helyet foglal és a prémium szolgáltatások miatt nehezebb, így 3x szorzóval számol. Az első osztályú kabinok lényegesen több helyet és extra súlyt igényelnek, ezért 4x szorzót alkalmazunk. Ez a módszertan maradéktalanul megfelel a nemzetközi légiközlekedési iparági sztenderdeknek.</p>
+</div>
+
+<div id="modal-terms" class="modal">
+    <span class="close-btn" onclick="closeModals()">&times;</span>
+    <h2 id="modalTermsTitle">Felhasználási Feltételek</h2>
+    <p id="modalTermsText">A kalkulátor által mutatott kibocsátási értékek kizárólag becslések, melyek iparági átlagokon alapulnak. Nem minősülnek hivatalos vagy hitelesített karbonlábnyom adatnak.</p>
+</div>
+
+<div id="modal-guide" class="modal">
+    <span class="close-btn" onclick="closeModals()">&times;</span>
+    <h2 id="modalGuideTitle">Használati Útmutató</h2>
+    <div id="modalGuideText"></div>
+</div>
+
+<script>
+    function toggleTheme() {
+        const body = document.body;
+        const btn = document.getElementById('themeBtn');
+        
+        if (body.getAttribute('data-theme') === 'dark') {
+            body.setAttribute('data-theme', 'light');
+            btn.innerText = '🌙';
+        } else {
+            body.setAttribute('data-theme', 'dark');
+            btn.innerText = '☀️';
+        }
+    }
+
+    const translations = {
+        hu: {
+            subTitle: "Prémium Karbonlábnyom & Kompenzáció Kalkulátor",
+            from: "Indulás (Honnan)",
+            to: "Érkezés (Hova)",
+            select: "Válassz várost...",
+            distance: "Számolt Távolság (Légvonalban)",
+            detailsHeader: "Utazás Részletei",
+            passengers: "Utasok",
+            adults: "Felnőtt",
+            children: "Gyerek",
+            infants: "Csecsemő",
+            class: "Repülési Osztály",
+            type: "Típus",
+            eco: "Turista (Economy) - 1x",
+            biz: "Üzleti (Business) - 3x",
+            first: "Első Osztály (First) - 4x",
+            oneway: "Egyirányú",
+            return: "Oda-vissza",
+            calcBtn: "Kalkuláció Indítása",
+            resultTitle: "AZ UTAZÁSOD BECSÜLT HATÁSA",
+            equals: "Ez a mennyiség egyenlő:",
+            laundry: "mosás",
+            shower: "perc zuhanyzás",
+            tv: "óra TV nézés",
+            footer: "Budapest Magyarország",
+            linkGoal: "Cél",
+            linkPrivacy: "Adatvédelem",
+            linkMultipliers: "Szorzók",
+            linkTerms: "Feltételek",
+            linkGuide: "Útmutató",
+            modalGoalTitle: "Célunk",
+            modalGoalText: "Elsődleges célunk, hogy utazás előtt ösztönözzük a tudatosabb repülést. Szeretnénk rávilágítani az egyéni felelősségre, és lehetőséget adni arra, hogy pontosabban megértsük és kompenzáljuk a környezeti terhelésünket, mielőtt egyáltalán felszállnánk.",
+            modalPrivacyTitle: "Adatvédelmi Irányelvek",
+            modalPrivacyText: "Az AeroBalance nem tárol személyes adatokat vagy repülési útvonalakat. Minden kalkuláció helyileg a böngésződben történik. Külső szerverekre adatot nem továbbítunk.",
+            modalMultiTitle: "Kibocsátási Szorzók",
+            modalMultiText: "A repülési osztályok szorzói a fizikai helyfoglaláson és a többletsúlyon alapulnak. A turistaosztály képezi az alapot. A business osztály mintegy háromszoros helyet foglal és a prémium szolgáltatások miatt nehezebb, így 3x szorzóval számol. Az első osztályú kabinok lényegesen több helyet és extra súlyt igényelnek, ezért 4x szorzót alkalmazunk. Ez a módszertan maradéktalanul megfelel a nemzetközi légiközlekedési iparági sztenderdeknek.",
+            modalTermsTitle: "Felhasználási Feltételek",
+            modalTermsText: "A kalkulátor által mutatott kibocsátási értékek kizárólag becslések, melyek iparági átlagokon alapulnak. Nem minősülnek hivatalos vagy hitelesített karbonlábnyom adatnak.",
+            modalGuideTitle: "Használati Útmutató",
+            modalGuideText: "<ul style='padding-left: 20px; margin-top: 10px;'><li>Válassza ki az indulási és érkezési várost.</li><li>Adja meg az utasok számát.</li><li>Állítsa be a repülési osztályt és az utazás típusát.</li><li>Kattintson a kalkuláció indítása gombra.</li><li>Tekintse meg a becsült karbonlábnyomot és a kompenzációt.</li></ul>"
+        },
+        en: {
+            subTitle: "Premium Carbon Footprint & Offset Calculator",
+            from: "From",
+            to: "To",
+            select: "Select city...",
+            distance: "Calculated Distance (Air)",
+            detailsHeader: "Trip Details",
+            passengers: "Passengers",
+            adults: "Adults",
+            children: "Children",
+            infants: "Infants",
+            class: "Flight Class",
+            type: "Trip Type",
+            eco: "Economy Class - 1x",
+            biz: "Business Class - 3x",
+            first: "First Class - 4x",
+            oneway: "One Way",
+            return: "Return",
+            calcBtn: "Calculate Impact",
+            resultTitle: "YOUR ESTIMATED IMPACT",
+            equals: "This amount equals:",
+            laundry: "laundry washes",
+            shower: "minutes of showering",
+            tv: "hours of TV watching",
+            footer: "Budapest Hungary",
+            linkGoal: "Goal",
+            linkPrivacy: "Privacy Policy",
+            linkMultipliers: "Multipliers",
+            linkTerms: "Terms of Service",
+            linkGuide: "User Guide",
+            modalGoalTitle: "Our Goal",
+            modalGoalText: "Our primary goal is to encourage more conscious flying before you even travel. We want to highlight individual responsibility and provide an opportunity to accurately understand and offset our environmental impact before taking off.",
+            modalPrivacyTitle: "Privacy Policy",
+            modalPrivacyText: "AeroBalance does not store personal data or flight routes. All calculations are performed locally in your browser. No data is sent to external servers.",
+            modalMultiTitle: "Emission Multipliers",
+            modalMultiText: "The carbon footprint calculation applies multipliers based on the chosen flight class. Economy class serves as the baseline. Business class occupies roughly three times the physical space and adds weight through premium amenities, resulting in a 3x multiplier. First class suites require significantly more space and specialized equipment, translating to a 4x multiplier. This methodology aligns seamlessly with international aviation emission standards.",
+            modalTermsTitle: "Terms of Service",
+            modalTermsText: "Emission values shown by the calculator are estimates only, based on industry averages. They do not constitute official or certified carbon footprint data.",
+            modalGuideTitle: "User Guide",
+            modalGuideText: "<ul style='padding-left: 20px; margin-top: 10px;'><li>Select your departure and arrival cities.</li><li>Specify the number of passengers.</li><li>Set the flight class and trip type.</li><li>Click the calculate impact button.</li><li>Review the estimated carbon footprint and offset.</li></ul>"
+        }
+    };
+
+    const cityData = {
+        "AAR": { hu: "Aarhus", en: "Aarhus", lat: 56.3000, lon: 10.6190 },
+        "ABZ": { hu: "Aberdeen", en: "Aberdeen", lat: 57.2019, lon: -2.1978 },
+        "AUH": { hu: "Abu Dhabi", en: "Abu Dhabi", lat: 24.4330, lon: 54.6511 },
+        "ADL": { hu: "Adelaide", en: "Adelaide", lat: -34.9450, lon: 138.5306 },
+        "ALC": { hu: "Alicante", en: "Alicante", lat: 38.2822, lon: -0.5582 },
+        "ALG": { hu: "Algír", en: "Algiers", lat: 36.6910, lon: 3.2154 },
+        "AMM": { hu: "Amman", en: "Amman", lat: 31.7225, lon: 35.9892 },
+        "AMS": { hu: "Amszterdam", en: "Amsterdam", lat: 52.3086, lon: 4.7639 },
+        "ESB": { hu: "Ankara", en: "Ankara", lat: 40.1281, lon: 32.9951 },
+        "AYT": { hu: "Antalya", en: "Antalya", lat: 36.8987, lon: 30.8005 },
+        "ATH": { hu: "Athén", en: "Athens", lat: 37.9364, lon: 23.9445 },
+        "ATL": { hu: "Atlanta", en: "Atlanta", lat: 33.6407, lon: -84.4277 },
+        "AKL": { hu: "Auckland", en: "Auckland", lat: -37.0082, lon: 174.7917 },
+        "AUS": { hu: "Austin", en: "Austin", lat: 30.1900, lon: -97.6687 },
+        "BSL": { hu: "Bázel", en: "Basel", lat: 47.5900, lon: 7.5292 },
+        "BKK": { hu: "Bangkok", en: "Bangkok", lat: 13.6811, lon: 100.7473 },
+        "BCN": { hu: "Barcelona", en: "Barcelona", lat: 41.2971, lon: 2.0785 },
+        "BRI": { hu: "Bari", en: "Bari", lat: 41.1389, lon: 16.7606 },
+        "BFS": { hu: "Belfast", en: "Belfast", lat: 54.6575, lon: -6.2158 },
+        "BEG": { hu: "Belgrád", en: "Belgrade", lat: 44.8184, lon: 20.3091 },
+        "BGY": { hu: "Bergamo", en: "Bergamo", lat: 45.6739, lon: 9.7042 },
+        "BGO": { hu: "Bergen", en: "Bergen", lat: 60.2933, lon: 5.2181 },
+        "BER": { hu: "Berlin", en: "Berlin", lat: 52.3667, lon: 13.5033 },
+        "VIE": { hu: "Bécs", en: "Vienna", lat: 48.1103, lon: 16.5697 },
+        "BIO": { hu: "Bilbao", en: "Bilbao", lat: 43.3011, lon: -2.9106 },
+        "BHX": { hu: "Birmingham", en: "Birmingham", lat: 52.4539, lon: -1.7480 },
+        "BOG": { hu: "Bogotá", en: "Bogota", lat: 4.7016, lon: -74.1469 },
+        "BLQ": { hu: "Bologna", en: "Bologna", lat: 44.5354, lon: 11.2887 },
+        "BOD": { hu: "Bordeaux", en: "Bordeaux", lat: 44.8283, lon: -0.7156 },
+        "BOS": { hu: "Boston", en: "Boston", lat: 42.3656, lon: -71.0096 },
+        "BTS": { hu: "Pozsony", en: "Bratislava", lat: 48.1700, lon: 17.2128 },
+        "BRE": { hu: "Bréma", en: "Bremen", lat: 53.0475, lon: 8.7867 },
+        "BNE": { hu: "Brisbane", en: "Brisbane", lat: -27.3842, lon: 153.1175 },
+        "BRS": { hu: "Bristol", en: "Bristol", lat: 51.3827, lon: -2.7191 },
+        "BRU": { hu: "Brüsszel", en: "Brussels", lat: 50.9014, lon: 4.4844 },
+        "CRL": { hu: "Brüsszel Charleroi", en: "Brussels Charleroi", lat: 50.4592, lon: 4.4538 },
+        "OTP": { hu: "Bukarest", en: "Bucharest", lat: 44.5722, lon: 26.1022 },
+        "BUD": { hu: "Budapest", en: "Budapest", lat: 47.4369, lon: 19.2556 },
+        "EZE": { hu: "Buenos Aires", en: "Buenos Aires", lat: -34.8222, lon: -58.5358 },
+        "BOJ": { hu: "Burgasz", en: "Burgas", lat: 42.5696, lon: 27.5152 },
+        "CAG": { hu: "Cagliari", en: "Cagliari", lat: 39.2515, lon: 9.0543 },
+        "YYC": { hu: "Calgary", en: "Calgary", lat: 51.1139, lon: -114.0203 },
+        "CUN": { hu: "Cancún", en: "Cancun", lat: 21.0367, lon: -86.8771 },
+        "CPT": { hu: "Cape Town", en: "Cape Town", lat: -33.9715, lon: 18.6021 },
+        "CCS": { hu: "Caracas", en: "Caracas", lat: 10.6031, lon: -66.9906 },
+        "CWL": { hu: "Cardiff", en: "Cardiff", lat: 51.3967, lon: -3.3433 },
+        "CMN": { hu: "Casablanca", en: "Casablanca", lat: 33.3675, lon: -7.5899 },
+        "CTA": { hu: "Catania", en: "Catania", lat: 37.4668, lon: 15.0664 },
+        "CLT": { hu: "Charlotte", en: "Charlotte", lat: 35.2140, lon: -80.9431 },
+        "ORD": { hu: "Chicago", en: "Chicago", lat: 41.9742, lon: -87.9073 },
+        "KIV": { hu: "Chisinau", en: "Chisinau", lat: 46.9275, lon: 28.9308 },
+        "CLJ": { hu: "Kolozsvár", en: "Cluj-Napoca", lat: 46.7852, lon: 23.6862 },
+        "CGN": { hu: "Köln", en: "Cologne", lat: 50.8659, lon: 7.1427 },
+        "CMB": { hu: "Colombo", en: "Colombo", lat: 7.1803, lon: 79.8833 },
+        "DSS": { hu: "Dakar", en: "Dakar", lat: 14.6700, lon: -17.0733 },
+        "DFW": { hu: "Dallas", en: "Dallas", lat: 32.8998, lon: -97.0403 },
+        "DAR": { hu: "Dar es Salaam", en: "Dar es Salaam", lat: -6.8781, lon: 39.2026 },
+        "DEB": { hu: "Debrecen", en: "Debrecen", lat: 47.4889, lon: 21.6153 },
+        "DEL": { hu: "Delhi", en: "Delhi", lat: 28.5562, lon: 77.1000 },
+        "DEN": { hu: "Denver", en: "Denver", lat: 39.8561, lon: -104.6737 },
+        "DTW": { hu: "Detroit", en: "Detroit", lat: 42.2121, lon: -83.3533 },
+        "DOH": { hu: "Doha", en: "Doha", lat: 25.2731, lon: 51.6080 },
+        "DTM": { hu: "Dortmund", en: "Dortmund", lat: 51.5183, lon: 7.6122 },
+        "DXB": { hu: "Dubaj", en: "Dubai", lat: 25.2528, lon: 55.3644 },
+        "DUB": { hu: "Dublin", en: "Dublin", lat: 53.4213, lon: -6.2701 },
+        "DUS": { hu: "Düsseldorf", en: "Dusseldorf", lat: 51.2890, lon: 6.7668 },
+        "EDI": { hu: "Edinburgh", en: "Edinburgh", lat: 55.9500, lon: -3.3725 },
+        "EIN": { hu: "Eindhoven", en: "Eindhoven", lat: 51.4584, lon: 5.3745 },
+        "FAO": { hu: "Faro", en: "Faro", lat: 37.0144, lon: -7.9659 },
+        "FLR": { hu: "Firenze", en: "Florence", lat: 43.8100, lon: 11.2051 },
+        "FRA": { hu: "Frankfurt", en: "Frankfurt", lat: 50.0333, lon: 8.5706 },
+        "HHN": { hu: "Frankfurt Hahn", en: "Frankfurt Hahn", lat: 49.9487, lon: 7.2639 },
+        "GVA": { hu: "Genf", en: "Geneva", lat: 46.2381, lon: 6.1089 },
+        "GOA": { hu: "Genova", en: "Genoa", lat: 44.4133, lon: 8.8375 },
+        "GLA": { hu: "Glasgow", en: "Glasgow", lat: 55.8719, lon: -4.4331 },
+        "GOT": { hu: "Göteborg", en: "Gothenburg", lat: 57.6611, lon: 12.2798 },
+        "GRZ": { hu: "Graz", en: "Graz", lat: 46.9911, lon: 15.4396 },
+        "CAN": { hu: "Guangzhou", en: "Guangzhou", lat: 23.3924, lon: 113.2988 },
+        "YHZ": { hu: "Halifax", en: "Halifax", lat: 44.8808, lon: -63.5086 },
+        "HAM": { hu: "Hamburg", en: "Hamburg", lat: 53.6304, lon: 9.9882 },
+        "HAJ": { hu: "Hannover", en: "Hanover", lat: 52.4611, lon: 9.6851 },
+        "HAN": { hu: "Hanoi", en: "Hanoi", lat: 21.2212, lon: 105.8072 },
+        "HEL": { hu: "Helsinki", en: "Helsinki", lat: 60.3172, lon: 24.9633 },
+        "SGN": { hu: "Ho Si Minh-város", en: "Ho Chi Minh City", lat: 10.8188, lon: 106.6520 },
+        "HKG": { hu: "Hong Kong", en: "Hong Kong", lat: 22.3080, lon: 113.9185 },
+        "HNL": { hu: "Honolulu", en: "Honolulu", lat: 21.3187, lon: -157.9225 },
+        "IAH": { hu: "Houston", en: "Houston", lat: 29.9902, lon: -95.3368 },
+        "IBZ": { hu: "Ibiza", en: "Ibiza", lat: 38.8729, lon: 1.3731 },
+        "INN": { hu: "Innsbruck", en: "Innsbruck", lat: 47.2602, lon: 11.3440 },
+        "IST": { hu: "Isztambul", en: "Istanbul", lat: 41.2753, lon: 28.7519 },
+        "SAW": { hu: "Isztambul Sabiha", en: "Istanbul Sabiha", lat: 40.8986, lon: 29.3092 },
+        "ADB": { hu: "Izmir", en: "Izmir", lat: 38.2924, lon: 27.1570 },
+        "CGK": { hu: "Jakarta", en: "Jakarta", lat: -6.1256, lon: 106.6558 },
+        "JED": { hu: "Jeddah", en: "Jeddah", lat: 21.6796, lon: 39.1565 },
+        "JNB": { hu: "Johannesburg", en: "Johannesburg", lat: -26.1392, lon: 28.2460 },
+        "KHI": { hu: "Karacsi", en: "Karachi", lat: 24.9065, lon: 67.1608 },
+        "FKB": { hu: "Karlsruhe", en: "Karlsruhe", lat: 48.7794, lon: 8.0805 },
+        "KSC": { hu: "Kassa", en: "Kosice", lat: 48.6631, lon: 21.2411 },
+        "KTW": { hu: "Katowice", en: "Katowice", lat: 50.4743, lon: 19.0800 },
+        "KUN": { hu: "Kaunas", en: "Kaunas", lat: 54.9639, lon: 24.0847 },
+        "KBP": { hu: "Kijev", en: "Kyiv", lat: 50.3450, lon: 30.8947 },
+        "CPH": { hu: "Koppenhága", en: "Copenhagen", lat: 55.6181, lon: 12.6561 },
+        "KRK": { hu: "Krakkó", en: "Krakow", lat: 50.0777, lon: 19.7848 },
+        "KUL": { hu: "Kuala Lumpur", en: "Kuala Lumpur", lat: 2.7456, lon: 101.7099 },
+        "LAS": { hu: "Las Vegas", en: "Las Vegas", lat: 36.0840, lon: -115.1537 },
+        "LBA": { hu: "Leeds", en: "Leeds", lat: 53.8659, lon: -1.6606 },
+        "LEJ": { hu: "Lipcse", en: "Leipzig", lat: 51.4239, lon: 12.2364 },
+        "LIM": { hu: "Lima", en: "Lima", lat: -12.0219, lon: -77.1143 },
+        "LIS": { hu: "Lisszabon", en: "Lisbon", lat: 38.7742, lon: -9.1342 },
+        "LPL": { hu: "Liverpool", en: "Liverpool", lat: 53.3336, lon: -2.8497 },
+        "LJU": { hu: "Ljubljana", en: "Ljubljana", lat: 46.2237, lon: 14.4576 },
+        "LCY": { hu: "London City", en: "London City", lat: 51.5053, lon: 0.0553 },
+        "LGW": { hu: "London Gatwick", en: "London Gatwick", lat: 51.1481, lon: -0.1903 },
+        "LHR": { hu: "London Heathrow", en: "London Heathrow", lat: 51.4700, lon: -0.4543 },
+        "LTN": { hu: "London Luton", en: "London Luton", lat: 51.8747, lon: -0.3683 },
+        "STN": { hu: "London Stansted", en: "London Stansted", lat: 51.8850, lon: 0.2350 },
+        "LAX": { hu: "Los Angeles", en: "Los Angeles", lat: 33.9425, lon: -118.4081 },
+        "LAD": { hu: "Luanda", en: "Luanda", lat: -8.8584, lon: 13.2312 },
+        "LYS": { hu: "Lyon", en: "Lyon", lat: 45.7256, lon: 5.0811 },
+        "MAD": { hu: "Madrid", en: "Madrid", lat: 40.4936, lon: -3.5668 },
+        "AGP": { hu: "Malaga", en: "Malaga", lat: 36.6749, lon: -4.4991 },
+        "MMX": { hu: "Malmö", en: "Malmo", lat: 55.5392, lon: 13.3722 },
+        "MLA": { hu: "Málta", en: "Malta", lat: 35.8575, lon: 14.4775 },
+        "MAN": { hu: "Manchester", en: "Manchester", lat: 53.3537, lon: -2.2750 },
+        "MNL": { hu: "Manila", en: "Manila", lat: 14.5086, lon: 121.0194 },
+        "TGM": { hu: "Marosvásárhely", en: "Targu Mures", lat: 46.4678, lon: 24.4125 },
+        "MRS": { hu: "Marseille", en: "Marseille", lat: 43.4361, lon: 5.2150 },
+        "MEL": { hu: "Melbourne", en: "Melbourne", lat: -37.6690, lon: 144.8410 },
+        "FMM": { hu: "Memmingen", en: "Memmingen", lat: 47.9888, lon: 10.2395 },
+        "MEX": { hu: "Mexikóváros", en: "Mexico City", lat: 19.4363, lon: -99.0721 },
+        "MIA": { hu: "Miami", en: "Miami", lat: 25.7932, lon: -80.2906 },
+        "LIN": { hu: "Milánó Linate", en: "Milan Linate", lat: 45.4451, lon: 9.2767 },
+        "MXP": { hu: "Milánó Malpensa", en: "Milan Malpensa", lat: 45.6306, lon: 8.7281 },
+        "MSP": { hu: "Minneapolis", en: "Minneapolis", lat: 44.8848, lon: -93.2223 },
+        "YUL": { hu: "Montréal", en: "Montreal", lat: 45.4706, lon: -73.7408 },
+        "DME": { hu: "Moszkva Domogyedovo", en: "Moscow Domodedovo", lat: 55.4086, lon: 37.9061 },
+        "SVO": { hu: "Moszkva Seremetyjevo", en: "Moscow Sheremetyevo", lat: 55.9726, lon: 37.4146 },
+        "BOM": { hu: "Mumbai", en: "Mumbai", lat: 19.0896, lon: 72.8656 },
+        "MUC": { hu: "München", en: "Munich", lat: 48.3538, lon: 11.7861 },
+        "NBO": { hu: "Nairobi", en: "Nairobi", lat: -1.3192, lon: 36.9275 },
+        "NTE": { hu: "Nantes", en: "Nantes", lat: 47.1532, lon: -1.6107 },
+        "NAP": { hu: "Nápoly", en: "Naples", lat: 40.8838, lon: 14.2908 },
+        "JFK": { hu: "New York JFK", en: "New York JFK", lat: 40.6398, lon: -73.7789 },
+        "LGA": { hu: "New York LGA", en: "New York LGA", lat: 40.7769, lon: -73.8740 },
+        "EWR": { hu: "Newark", en: "Newark", lat: 40.6895, lon: -74.1745 },
+        "NCL": { hu: "Newcastle", en: "Newcastle", lat: 55.0375, lon: -1.6917 },
+        "NCE": { hu: "Nizza", en: "Nice", lat: 43.6584, lon: 7.2159 },
+        "NUE": { hu: "Nürnberg", en: "Nuremberg", lat: 49.4987, lon: 11.0780 },
+        "MCO": { hu: "Orlando", en: "Orlando", lat: 28.4312, lon: -81.3081 },
+        "KIX": { hu: "Oszaka", en: "Osaka", lat: 34.4320, lon: 135.2304 },
+        "OSL": { hu: "Oszló", en: "Oslo", lat: 60.1976, lon: 11.1004 },
+        "TRF": { hu: "Oszló Torp", en: "Oslo Torp", lat: 59.1867, lon: 10.2586 },
+        "PMO": { hu: "Palermo", en: "Palermo", lat: 38.1760, lon: 13.0910 },
+        "PMI": { hu: "Palma de Mallorca", en: "Palma de Mallorca", lat: 39.5517, lon: 2.7388 },
+        "PTY": { hu: "Panama City", en: "Panama City", lat: 9.0714, lon: -79.3835 },
+        "BVA": { hu: "Párizs Beauvais", en: "Paris Beauvais", lat: 49.4544, lon: 2.1128 },
+        "CDG": { hu: "Párizs CDG", en: "Paris CDG", lat: 49.0097, lon: 2.5479 },
+        "ORY": { hu: "Párizs Orly", en: "Paris Orly", lat: 48.7262, lon: 2.3652 },
+        "PEK": { hu: "Peking Capital", en: "Beijing Capital", lat: 40.0801, lon: 116.5846 },
+        "PKX": { hu: "Peking Daxing", en: "Beijing Daxing", lat: 39.5092, lon: 116.4105 },
+        "PSA": { hu: "Pisa", en: "Pisa", lat: 43.6839, lon: 10.3927 },
+        "OPO": { hu: "Porto", en: "Porto", lat: 41.2481, lon: -8.6814 },
+        "POZ": { hu: "Poznan", en: "Poznan", lat: 52.4210, lon: 16.8263 },
+        "PRG": { hu: "Prága", en: "Prague", lat: 50.1008, lon: 14.2600 },
+        "KEF": { hu: "Reykjavik", en: "Reykjavik", lat: 63.9850, lon: -22.6056 },
+        "RIX": { hu: "Riga", en: "Riga", lat: 56.9236, lon: 23.9711 },
+        "GIG": { hu: "Rio de Janeiro", en: "Rio de Janeiro", lat: -22.8062, lon: -43.2436 },
+        "RUH": { hu: "Riyadh", en: "Riyadh", lat: 24.9576, lon: 46.6988 },
+        "CIA": { hu: "Róma Ciampino", en: "Rome Ciampino", lat: 41.7994, lon: 12.5949 },
+        "FCO": { hu: "Róma Fiumicino", en: "Rome Fiumicino", lat: 41.8003, lon: 12.2389 },
+        "SFO": { hu: "San Francisco", en: "San Francisco", lat: 37.6189, lon: -122.3750 },
+        "PVG": { hu: "Sanghaj", en: "Shanghai", lat: 31.1434, lon: 121.8053 },
+        "SCL": { hu: "Santiago", en: "Santiago", lat: -33.3930, lon: -70.7858 },
+        "GRU": { hu: "São Paulo", en: "Sao Paulo", lat: -23.4356, lon: -46.4731 },
+        "SEA": { hu: "Seattle", en: "Seattle", lat: 47.4489, lon: -122.3093 },
+        "SVQ": { hu: "Sevilla", en: "Seville", lat: 37.4180, lon: -5.8931 },
+        "SPU": { hu: "Split", en: "Split", lat: 43.5389, lon: 16.2980 },
+        "ARN": { hu: "Stockholm Arlanda", en: "Stockholm Arlanda", lat: 59.6519, lon: 17.9186 },
+        "NYO": { hu: "Stockholm Skavsta", en: "Stockholm Skavsta", lat: 58.7886, lon: 16.9122 },
+        "SXB": { hu: "Strasbourg", en: "Strasbourg", lat: 48.5383, lon: 7.6282 },
+        "STR": { hu: "Stuttgart", en: "Stuttgart", lat: 48.6899, lon: 9.2220 },
+        "SYD": { hu: "Sydney", en: "Sydney", lat: -33.9461, lon: 151.1772 },
+        "SIN": { hu: "Szingapúr", en: "Singapore", lat: 1.3502, lon: 103.9940 },
+        "SOF": { hu: "Szófia", en: "Sofia", lat: 42.6952, lon: 23.4061 },
+        "ICN": { hu: "Szöul", en: "Seoul", lat: 37.4692, lon: 126.4505 },
+        "TPE": { hu: "Tajpej", en: "Taipei", lat: 25.0797, lon: 121.2342 },
+        "TLL": { hu: "Tallinn", en: "Tallinn", lat: 59.4133, lon: 24.8328 },
+        "TLV": { hu: "Tel-Aviv", en: "Tel Aviv", lat: 32.0114, lon: 34.8867 },
+        "TSR": { hu: "Temesvár", en: "Timisoara", lat: 45.8100, lon: 21.3375 },
+        "TFS": { hu: "Tenerife South", en: "Tenerife South", lat: 28.0445, lon: -16.5725 },
+        "SKG": { hu: "Thesszaloniki", en: "Thessaloniki", lat: 40.5197, lon: 22.9709 },
+        "TIA": { hu: "Tirana", en: "Tirana", lat: 41.4147, lon: 19.7206 },
+        "HND": { hu: "Tokió Haneda", en: "Tokyo Haneda", lat: 35.5523, lon: 139.7797 },
+        "NRT": { hu: "Tokió Narita", en: "Tokyo Narita", lat: 35.7647, lon: 140.3863 },
+        "TRN": { hu: "Torino", en: "Turin", lat: 45.2008, lon: 7.6496 },
+        "YYZ": { hu: "Toronto", en: "Toronto", lat: 43.6767, lon: -79.6306 },
+        "TLS": { hu: "Toulouse", en: "Toulouse", lat: 43.6291, lon: 1.3638 },
+        "TSF": { hu: "Treviso", en: "Treviso", lat: 45.6484, lon: 12.1944 },
+        "VLC": { hu: "Valencia", en: "Valencia", lat: 39.4893, lon: -0.4816 },
+        "YVR": { hu: "Vancouver", en: "Vancouver", lat: 49.1939, lon: -123.1844 },
+        "VAR": { hu: "Varna", en: "Varna", lat: 43.2321, lon: 27.8251 },
+        "WAW": { hu: "Varsó Chopin", en: "Warsaw Chopin", lat: 52.1657, lon: 20.9671 },
+        "WMI": { hu: "Varsó Modlin", en: "Warsaw Modlin", lat: 52.4511, lon: 20.6518 },
+        "VCE": { hu: "Velence", en: "Venice", lat: 45.5053, lon: 12.3519 },
+        "VRN": { hu: "Verona", en: "Verona", lat: 45.3957, lon: 10.8885 },
+        "VNO": { hu: "Vilnius", en: "Vilnius", lat: 54.6341, lon: 25.2858 },
+        "WRO": { hu: "Wroclaw", en: "Wroclaw", lat: 51.1027, lon: 16.8858 },
+        "ZAG": { hu: "Zágráb", en: "Zagreb", lat: 45.7431, lon: 16.0688 },
+        "ZAD": { hu: "Zára", en: "Zadar", lat: 44.1083, lon: 15.3467 },
+        "ZRH": { hu: "Zürich", en: "Zurich", lat: 47.4647, lon: 8.5492 },
+        "ABQ": { hu: "Albuquerque", en: "Albuquerque", lat: 35.0402, lon: -106.6092 },
+        "OLB": { hu: "Olbia", en: "Olbia", lat: 40.8986, lon: 9.5176 },
+        "AHO": { hu: "Alghero", en: "Alghero", lat: 40.6321, lon: 8.2908 },
+        "BDS": { hu: "Brindisi", en: "Brindisi", lat: 40.6576, lon: 17.9470 },
+        "SUF": { hu: "Lamezia Terme", en: "Lamezia Terme", lat: 38.9054, lon: 16.2423 },
+        "PSR": { hu: "Pescara", en: "Pescara", lat: 42.4332, lon: 14.1831 },
+        "AOI": { hu: "Ancona", en: "Ancona", lat: 43.6163, lon: 13.3623 },
+        "TOS": { hu: "Tromso", en: "Tromso", lat: 69.6833, lon: 18.9189 },
+        "TRD": { hu: "Trondheim", en: "Trondheim", lat: 63.4576, lon: 10.9242 },
+        "SVG": { hu: "Stavanger", en: "Stavanger", lat: 58.8767, lon: 5.6378 },
+        "AAL": { hu: "Aalborg", en: "Aalborg", lat: 57.0928, lon: 9.8492 },
+        "BLL": { hu: "Billund", en: "Billund", lat: 55.7403, lon: 9.1517 },
+        "TMP": { hu: "Tampere", en: "Tampere", lat: 61.4141, lon: 23.6044 },
+        "TKU": { hu: "Turku", en: "Turku", lat: 60.5141, lon: 20.2289 },
+        "OUL": { hu: "Oulu", en: "Oulu", lat: 64.9301, lon: 25.3546 },
+        "GRO": { hu: "Girona", en: "Girona", lat: 41.9010, lon: 2.7605 },
+        "REU": { hu: "Reus", en: "Reus", lat: 41.1474, lon: 1.1672 },
+        "ZAZ": { hu: "Zaragoza", en: "Zaragoza", lat: 41.6662, lon: -1.0415 },
+        "SDR": { hu: "Santander", en: "Santander", lat: 43.4271, lon: -3.8200 },
+        "SCQ": { hu: "Santiago de Compostela", en: "Santiago de Compostela", lat: 42.8963, lon: -8.4151 },
+        "LCG": { hu: "Coruna", en: "Coruna", lat: 43.3021, lon: -8.3773 },
+        "VGO": { hu: "Vigo", en: "Vigo", lat: 42.2318, lon: -8.6268 },
+        "XRY": { hu: "Jerez", en: "Jerez", lat: 36.7446, lon: -6.0601 },
+        "GRX": { hu: "Granada", en: "Granada", lat: 37.1887, lon: -3.7772 },
+        "LEI": { hu: "Almeria", en: "Almeria", lat: 36.8439, lon: -2.3701 },
+        "RMU": { hu: "Murcia", en: "Murcia", lat: 37.8030, lon: -1.1250 },
+        "FUE": { hu: "Fuerteventura", en: "Fuerteventura", lat: 28.4527, lon: -13.8638 },
+        "ACE": { hu: "Lanzarote", en: "Lanzarote", lat: 28.9455, lon: -13.6052 },
+        "LPA": { hu: "Gran Canaria", en: "Gran Canaria", lat: 27.9319, lon: -15.3866 },
+        "TFN": { hu: "Tenerife North", en: "Tenerife North", lat: 28.4827, lon: -16.3415 },
+        "SPC": { hu: "La Palma", en: "La Palma", lat: 28.6265, lon: -17.7556 },
+        "MAH": { hu: "Menorca", en: "Menorca", lat: 39.8626, lon: 4.2186 }
+    };
+
+    let pax = { adult: 1, child: 0, infant: 0 };
+
+    function modPax(type, change) {
+        pax[type] += change;
+        if (type === 'adult' && pax[type] < 1) pax[type] = 1;
+        if (type !== 'adult' && pax[type] < 0) pax[type] = 0;
+        document.getElementById(`count-${type}`).innerText = pax[type];
+    }
+
+    function toggleLanguage() {
+        const isChecked = document.getElementById('langToggle').checked;
+        applyLang(isChecked ? 'hu' : 'en');
+    }
+
+    function setLang(lang) {
+        const toggle = document.getElementById('langToggle');
+        toggle.checked = (lang === 'hu');
+        applyLang(lang);
+    }
+
+    function populateCities(lang) {
+        const fromSelect = document.getElementById('fromCity');
+        const toSelect = document.getElementById('toCity');
+        
+        const fromVal = fromSelect.value;
+        const toVal = toSelect.value;
+        
+        fromSelect.options.length = 1;
+        toSelect.options.length = 1;
+        
+        const cities = Object.keys(cityData).sort((a, b) => cityData[a][lang].localeCompare(cityData[b][lang]));
+        
+        cities.forEach(code => {
+            const name = cityData[code][lang] + ` (${code})`;
+            fromSelect.add(new Option(name, code));
+            toSelect.add(new Option(name, code));
+        });
+        
+        fromSelect.value = fromVal || "";
+        toSelect.value = toVal || "";
+    }
+
+    function applyLang(lang) {
+        const t = translations[lang];
+        document.getElementById('lblSubTitle').innerText = t.subTitle;
+        document.getElementById('lblFrom').innerText = t.from;
+        document.getElementById('lblTo').innerText = t.to;
+        document.getElementById('optSelect').innerText = t.select;
+        document.getElementById('optSelect2').innerText = t.select;
+        document.getElementById('lblDistance').innerText = t.distance;
+        document.getElementById('lblDetailsHeader').innerText = t.detailsHeader;
+        document.getElementById('lblPassengers').innerText = t.passengers;
+        document.getElementById('lblAdults').innerText = t.adults;
+        document.getElementById('lblChildren').innerText = t.children;
+        document.getElementById('lblInfants').innerText = t.infants;
+        document.getElementById('lblClass').innerText = t.class;
+        document.getElementById('lblType').innerText = t.type;
+        
+        const flightClassSelect = document.getElementById('flightClass');
+        flightClassSelect.options[0].text = t.eco;
+        flightClassSelect.options[1].text = t.biz;
+        flightClassSelect.options[2].text = t.first;
+
+        document.getElementById('optOneWay').innerText = t.oneway;
+        document.getElementById('optReturn').innerText = t.return;
+        document.getElementById('btnCalc').innerText = t.calcBtn;
+        document.getElementById('lblResultTitle').innerText = t.resultTitle;
+        document.getElementById('lblEquals').innerText = t.equals;
+        document.getElementById('lblLaundry').innerText = t.laundry;
+        document.getElementById('lblShower').innerText = t.shower;
+        document.getElementById('lblTv').innerText = t.tv;
+        document.getElementById('footerText').innerText = t.footer;
+        
+        document.getElementById('linkGoal').innerText = t.linkGoal;
+        document.getElementById('linkPrivacy').innerText = t.linkPrivacy;
+        document.getElementById('linkMultipliers').innerText = t.linkMultipliers;
+        document.getElementById('linkTerms').innerText = t.linkTerms;
+        document.getElementById('linkGuide').innerText = t.linkGuide;
+        document.getElementById('modalGoalTitle').innerText = t.modalGoalTitle;
+        document.getElementById('modalGoalText').innerText = t.modalGoalText;
+        document.getElementById('modalPrivacyTitle').innerText = t.modalPrivacyTitle;
+        document.getElementById('modalPrivacyText').innerText = t.modalPrivacyText;
+        document.getElementById('modalMultiTitle').innerText = t.modalMultiTitle;
+        document.getElementById('modalMultiText').innerText = t.modalMultiText;
+        document.getElementById('modalTermsTitle').innerText = t.modalTermsTitle;
+        document.getElementById('modalTermsText').innerText = t.modalTermsText;
+        document.getElementById('modalGuideTitle').innerText = t.modalGuideTitle;
+        document.getElementById('modalGuideText').innerHTML = t.modalGuideText;
+
+        if(lang === 'hu') {
+            document.getElementById('lang-hu').classList.add('active');
+            document.getElementById('lang-en').classList.remove('active');
+        } else {
+            document.getElementById('lang-en').classList.add('active');
+            document.getElementById('lang-hu').classList.remove('active');
+        }
+        
+        populateCities(lang);
+    }
+
+    function openModal(modalId) {
+        document.getElementById('modal-overlay').style.display = 'block';
+        document.getElementById(modalId).style.display = 'block';
+    }
+
+    function closeModals() {
+        document.getElementById('modal-overlay').style.display = 'none';
+        document.getElementById('modal-goal').style.display = 'none';
+        document.getElementById('modal-privacy').style.display = 'none';
+        document.getElementById('modal-multipliers').style.display = 'none';
+        document.getElementById('modal-terms').style.display = 'none';
+        document.getElementById('modal-guide').style.display = 'none';
+    }
+
+    window.onload = function() {
+        setLang('hu');
+    };
+
+    function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+        const R = 6371; 
+        const dLat = deg2rad(lat2 - lat1);
+        const dLon = deg2rad(lon2 - lon1);
+        const a = 
+            Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2); 
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+        return R * c;
+    }
+
+    function deg2rad(deg) { return deg * (Math.PI/180); }
+
+    function updateDistance() {
+        const fromCity = document.getElementById('fromCity').value;
+        const toCity = document.getElementById('toCity').value;
+        const distInput = document.getElementById('distance');
+
+        if (fromCity && toCity && cityData[fromCity] && cityData[toCity]) {
+            const dist = getDistanceFromLatLonInKm(
+                cityData[fromCity].lat, cityData[fromCity].lon,
+                cityData[toCity].lat, cityData[toCity].lon
+            );
+            distInput.value = Math.round(dist) + " km";
+        }
+    }
+
+    function calculateFootprint() {
+        const distVal = document.getElementById('distance').value;
+        const tripType = parseInt(document.getElementById('tripType').value);
+        const flightClassFactor = parseFloat(document.getElementById('flightClass').value); 
+
+        if (!distVal || distVal === "") {
+            alert(document.getElementById('langToggle').checked ? 'Kérlek válassz indulási és érkezési várost.' : 'Please select a departure and arrival city.');
+            return;
+        }
+
+        const km = parseFloat(distVal.replace(" km", ""));
+        const totalDistance = km * tripType;
+        const payingPassengers = pax.adult + pax.child;
+        
+        const co2PerKm = 0.115 * flightClassFactor; 
+        
+        const totalCo2Kg = totalDistance * payingPassengers * co2PerKm;
+        const totalCo2Tonnes = totalCo2Kg / 1000;
+
+        const treesNeeded = Math.ceil(totalCo2Tonnes * 1.65); 
+
+        const laundry = Math.round(totalCo2Tonnes * 1426);
+        const showers = Math.round(totalCo2Tonnes * 4900);
+        const tvHours = Math.round(totalCo2Tonnes * 12480);
+
+        const isHu = document.getElementById('langToggle').checked;
+        document.getElementById('totalCO2Display').innerText = totalCo2Tonnes.toFixed(2) + (isHu ? " tonna CO2" : " tons CO2");
+        document.getElementById('treeDisplay').innerText = isHu ? `Szükséges kompenzáció: ${treesNeeded} db fa` : `Required offset: ${treesNeeded} trees`;
+        
+        let lVal = document.getElementById('laundryVal');
+        let sVal = document.getElementById('showerVal');
+        let tVal = document.getElementById('tvVal');
+        
+        animateValue(lVal, 0, laundry, 1500);
+        animateValue(sVal, 0, showers, 1500);
+        animateValue(tVal, 0, tvHours, 1500);
+
+        const results = document.getElementById('results');
+        results.style.display = 'block';
+        
+        setTimeout(() => {
+            document.getElementById('vis1').classList.add('show');
+            setTimeout(() => document.getElementById('vis2').classList.add('show'), 150);
+            setTimeout(() => document.getElementById('vis3').classList.add('show'), 300);
+        }, 100);
+
+        results.scrollIntoView({behavior: "smooth"});
+    }
+    
+    function animateValue(obj, start, end, duration) {
+        let startTimestamp = null;
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            obj.innerHTML = Math.floor(progress * (end - start) + start);
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            }
+        };
+        window.requestAnimationFrame(step);
+    }
+</script>
+
+</body>
+</html>
